@@ -1,0 +1,152 @@
+<html>
+	<head>
+		<title>SCC WS Robot Demo</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			
+			button {
+				background-color: #eee;
+				padding-top: 8px;
+				padding-bottom: 8px;
+				padding-left: 20px;
+				padding-right: 20px;
+				border: 1px solid #bbb;
+				border-radius: 5px;
+				shadow: 0px;
+				font-size: 1.1em;
+				margin-bottom: 3px;
+				cursor: pointer;
+				font: bold;
+			}
+			button:hover{
+				background-color: #dfdfdf;
+			}
+			
+			button.primary {
+				background-color: #29B6F6;
+				color: white;
+			}
+			
+			button.primary:hover {
+				background-color: #03A9F4;
+				color: while
+			}
+		</style>
+	</head>
+	
+	<body>
+		<div>
+			<h4>Input</h4>
+			<input id="value"><br>
+			<button id="submit">Submit</button>
+			<br>
+			x = <span id="x"></span><br>
+			y = <span id="y"></span><br>
+		</div>
+		<script>
+			let host = window.location.host;
+			const socket = new WebSocket('ws://' + host);
+						
+			let $submit = document.getElementById("submit");
+			let $value = document.getElementById("value");
+			
+			
+			socket.addEventListener('message', (event) => {
+				let data = JSON.parse(event.data);
+				console.log("Message from server: ", data);
+			});
+									
+			$submit.addEventListener('click', (event) => {
+				console.log($value.value);
+				socket.send(JSON.stringify({message: $value.value}));
+			});
+			
+		</script>
+		<script>
+			let controller = null;
+			
+			window.addEventListener("gamepadconnected", (event) => {
+				console.log(
+					"Gamepad connected at index %d: %s. %d buttons, %d axes.",
+					event.gamepad.index,
+					event.gamepad.id,
+					event.gamepad.buttons.length,
+					event.gamepad.axes.length
+				);
+				
+				if(event.gamepad.id.match(/046d/)){
+					console.log("Use this controller");
+					controller = event.gamepad;
+					gameLoop();
+				}
+			});
+			
+			let previousData = {x: 0, y: 0};
+			let buttonPressed = false;
+			let buttonUpdated = false;
+			function gameLoop(){
+				if(controller === null){
+					return;
+				}
+				
+				let gamepads = navigator.getGamepads();
+				
+				controller = gamepads[controller.index];
+				
+				if(controller.buttons[0].pressed === true){
+					buttonPressed = true;
+				} else {
+					buttonUpdated = false;
+				}
+				
+				if(buttonPressed === true && buttonUpdated === false){
+					socket.send(JSON.stringify({message: "Fire Missile!"}));
+					buttonUpdated = true;
+				}
+				
+				buttonPressed = false;
+				
+				let y = controller.axes[1];
+				let x = controller.axes[0];
+				
+				y = scale(y, 0.74, -0.74, -100, 100);
+				y = constrain(y, -100, 100);
+				
+				x = scale(x, -0.68, 0.68, -100, 100);
+				x = constrain(x, -100, 100);
+				
+				let update = false;
+				if(previousData.x !== x){
+					update = true;
+				}
+				if(previousData.y !== y){
+					update = true;
+				}
+				
+				document.getElementById("x").innerHTML = x;
+				document.getElementById("y").innerHTML = y;
+				
+				if(update){
+					socket.send(JSON.stringify({command: "move", x: roundToTwo(x), y: roundToTwo(y)}));
+				}
+				
+				previousData = {x,y};
+			}
+			
+			setInterval(gameLoop, 50);
+			
+			function scale(input, oldMin, oldMax, min, max){
+				return (((input - oldMin) * (max - min)) / (oldMax - oldMin)) + min;
+			}
+			
+			function constrain(input, min, max){
+				return input > max ? max : input < min ? min : input;
+			}
+			
+			function roundToTwo(num) {    
+				return +(Math.round(num + "e+2")  + "e-2");
+			}
+		</script>
+	
+	</body>
+</html>
