@@ -3,7 +3,6 @@
 		<title>SCC WS Robot Demo</title>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<style>
-			
 			button {
 				background-color: #eee;
 				padding-top: 8px;
@@ -46,13 +45,15 @@
 		<script>
 			let host = window.location.host;
 			const socket = new WebSocket('ws://' + host);
-						
+			
+			// Initialize DOM elements to get values from the User
 			let $submit = document.getElementById("submit");
 			let $value = document.getElementById("value");
 			
-			
+			// Listen to events coming from the Pi WebSocket Server
 			socket.addEventListener('message', (event) => {
 				let data = JSON.parse(event.data);
+				// Output message to console
 				console.log("Message from server: ", data);
 			});
 									
