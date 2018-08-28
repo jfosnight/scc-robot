@@ -35,8 +35,8 @@ wss.on('connection', (ws, req) => {
 		if(data.command === "move"){
 			console.log(data);
 			
+			let xOut = (data.x * 50).toFixed(0);
 			let yOut = (data.y * 50).toFixed(0);
-			console.log(yOut);
 			
 			// Output to Arduino
 			port.write(yOut + "\n", (error) => {
@@ -44,6 +44,14 @@ wss.on('connection', (ws, req) => {
 					console.log(error);
 				}
 			});
+			
+			alertClients(JSON.stringify({command: "position", x: xOut, y: yOut}));
+		} else if (data.command === "position") {
+			console.log(data);
+			
+			let xOut = (data.x * 50).toFixed(0);
+			let yOut = (data.y * 50).toFixed(0);
+			
 		} else {
 			// Log all other messages.
 			console.log(data);

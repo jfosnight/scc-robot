@@ -5,17 +5,18 @@
 		<style>
 			button {
 				background-color: #eee;
-				padding-top: 8px;
-				padding-bottom: 8px;
-				padding-left: 20px;
-				padding-right: 20px;
+				padding-top: 4px;
+				padding-bottom: 4px;
+				padding-left: 10px;
+				padding-right: 10px;
 				border: 1px solid #bbb;
 				border-radius: 5px;
 				shadow: 0px;
-				font-size: 1.1em;
+				font-size: 1em;
 				margin-bottom: 3px;
 				cursor: pointer;
 				font: bold;
+				margin-top: 6px;
 			}
 			button:hover{
 				background-color: #dfdfdf;
@@ -36,11 +37,23 @@
 	<body>
 		<div>
 			<h4>Input</h4>
-			<input id="value"><br>
-			<button id="submit">Submit</button>
+			<h4>Input</h4>
+			<form id="input-form">
+				X <input id="move-x"><br>
+				Y <input id="move-y"><br>
+				<!--<input id="value"><br>-->
+				<button id="submit" type="submit">Submit</button><br>
+			</form>
+			
 			<br>
+			<h4>Inputs (from JoyStick)</h4>
 			x = <span id="x"></span><br>
 			y = <span id="y"></span><br>
+			<br>
+			
+			<h4>Robot Feedback</h4>
+			X: <span id="current-x"></span><br>
+			Y: <span id="current-y"></span><br>
 		</div>
 		<script>
 			let host = window.location.host;
@@ -50,17 +63,40 @@
 			let $submit = document.getElementById("submit");
 			let $value = document.getElementById("value");
 			
+			let $form = document.getElementById("input-form");
+			
+			let $xInput = document.getElementById("move-x");
+			let $yInput = document.getElementById("move-y");
+			
+			let $currentX = document.getElementById("current-x");
+			let $currentY = document.getElementById("current-y");
+			
 			// Listen to events coming from the Pi WebSocket Server
 			socket.addEventListener('message', (event) => {
 				let data = JSON.parse(event.data);
 				// Output message to console
 				console.log("Message from server: ", data);
+				
+				if(data.command && data.command === "position"){
+					$currentX.innerHTML = data.x;
+					$currentY.innerHTML = data.y;
+				}
 			});
 									
 			$submit.addEventListener('click', (event) => {
-				console.log($value.value);
-				socket.send(JSON.stringify({message: $value.value}));
+				sendPosition();
 			});
+			
+			$form.addEventListener('submit', (event) => {
+				event.preventDefault();
+			});
+			
+			function sendPosition(){
+				let x = $xInput.value;
+				let y = $yInput.value;
+				
+				socket.send(JSON.stringify({command: "position", x: Number(x), y: Number(y)}));
+			}
 			
 		</script>
 		<script>
