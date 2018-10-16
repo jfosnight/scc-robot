@@ -39,11 +39,7 @@ wss.on('connection', (ws, req) => {
 			let yOut = (data.y * 50).toFixed(0);
 			
 			// Output to Arduino
-			port.write(yOut + "\n", (error) => {
-				if(error){
-					console.log(error);
-				}
-			});
+			sendMove(xOut, yOut);
 			
 			alertClients(JSON.stringify({command: "position", x: xOut, y: yOut}));
 		} else if (data.command === "position") {
@@ -74,8 +70,35 @@ function alertClients(message){
 	}
 }
 
+// REST API
+app.get("/robot/pos/", (req, res) => {
+	getPos();
+});
+app.post("/robot/move/", (req, res) => {
+	sendMove(x,y);
+});
+
 
 // Listen on port 3003 for incomming HTTP connections
 server.listen(3003, () => {
 	console.log('Listening on %d', server.address().port);
 });
+
+// Send X,Y to Arduino
+function sendMove(x, y){
+	// Output to Arduino
+	port.write(`${x},${y}\n`, portErrorCB);
+}
+function getPos(){
+	port.write("pos", portErrorCB);
+}
+// Read data that is available but keep the stream from entering "flowing mode"
+port.on('readable', function () {
+  console.log('Data:', port.read().toString());
+});
+
+function portErrorCB(err){
+	if(err){
+		console.error(err);
+	}
+}
